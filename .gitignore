@@ -3,3 +3,4 @@ data/
 .idea
 package-lock.json
 scraper3.js
+log.txt
