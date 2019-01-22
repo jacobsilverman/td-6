@@ -13,16 +13,10 @@ let scrape_urls = [];
 let final_set = [];
 
 function handleErrors(response) {
-
-    if (response.ok) {
-      resolve(response);
-    } else if (response.status > 300) {
-      reject({e: response.status, origin: 'Some server error'})
-    } else if (response.status < 200){
-      reject({e: response.status, origin: 'Unauthorized'})
-    } else {
-      reject({e: response.status, origin: 'default'})
+    if (!response.ok) {
+      throw new Error('response not ok')
     }
+    return response;
 }
 
 function fetch1(){
@@ -40,8 +34,7 @@ function fetch1(){
           });
           resolve();
         } catch(e){
-          const origin = 'fetching urls from homepage';
-          reject({ e, origin });
+          reject(e);
         }
       });
     })
@@ -71,8 +64,7 @@ async function fetch2(){
       }
       resolve();
     } catch(e){
-      const origin = 'scraping data from t-shirt pages';
-      reject({ e, origin });
+      reject(e);
     }
   });
 }
@@ -84,20 +76,12 @@ function write_file(){
 async function main(){
   /* */
   try {
-    await fetch1()
+    await fetch1();
+    await fetch2();
+    write_file()
   } catch(error){
-    console.log('catching f1: ', error.origin)
     logger.write(error)
   }
-  /* */
-  try {
-    await fetch2()
-  } catch(error){
-    console.log('catching f2: ', error)
-    logger.write(error)
-  }
-  /* */
-  write_file()
 }
 
 main();

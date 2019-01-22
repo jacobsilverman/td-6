@@ -53,7 +53,7 @@ async function checkDirectoryExists(dataPath) {
     // console.log('end lock');
   } catch(e) {
     /* directory does not exist */
-    console.log('Creating ', dataPath);
+    // console.log('Creating ', dataPath);
     await mkdir(dataPath);
     lock = false;
     // console.log('end lock');

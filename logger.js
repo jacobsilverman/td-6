@@ -3,16 +3,9 @@ var moment = require('moment');
 var zone = require('moment-timezone');
 
 function write(error){
-  console.log('error ',error)
-  let stream = fs.createWriteStream("log.txt", {flags:'a'});
-  // let  = moment().format("ddd MMM DD YYYY HH:mm:ss ");
+  let stream = fs.createWriteStream("scraper-error.log", {flags:'a'});
   let stamp = moment().toString() + ' ' + zone.tz(zone.tz.guess()).zoneAbbr();
-  if (error.origin){
-    stream.write(stamp + ' Problem ' + error.origin + ' ' + error.e + "\n");
-    stream.end();
-  } else {
-    stream.write(stamp + ' ' + error.e + "\n");
-    stream.end();
-  }
+  stream.write(stamp + ' ' + error + "\n");
+  stream.end();
 }
 module.exports = { write };
