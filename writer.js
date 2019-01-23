@@ -1,3 +1,5 @@
+/* writer file exports write function */
+/* handles directory and file creation and writing to file */
 /* fs library for read/write to files */
 const fs = require('fs');
 /* promisify library for returning promises */
@@ -36,8 +38,9 @@ function checkLock(){
 
   });
 }
-/* check if a directory exists */
+/* Function to check for a folder called ‘data’.  */
 async function checkDirectoryExists(dataPath) {
+
 
   if(lock)
     await checkLock();
@@ -46,17 +49,15 @@ async function checkDirectoryExists(dataPath) {
   // console.log('Locking', dataPath);
 
   try {
-    await lstat(dataPath);
     /* directory does exist */
+    await lstat(dataPath);
+    /* If the folder does exist, the scraper should do nothing. */
     lock = false;
-    // console.log('Existing ', dataPath);
-    // console.log('end lock');
   } catch(e) {
     /* directory does not exist */
-    // console.log('Creating ', dataPath);
     await mkdir(dataPath);
+    /* If the folder does not exist, create one. */
     lock = false;
-    // console.log('end lock');
   }
 }
 
