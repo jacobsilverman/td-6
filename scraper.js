@@ -85,6 +85,8 @@ async function main(){
   try {
     await fetch_urls();
     await fetch_data();
+    /* write data object to file as csv */
+    /* see writer.js */
     writer.write(final_set)
   } catch(error){
     /* any error in the nested code will bubble up to here */
