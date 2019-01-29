@@ -1,4 +1,4 @@
-/* scraper file crawls the web pages */
+/* scraper file crawls the Mike's Webpage */
 /* all packages > 1,000 downloads  ✅ */
 /* all packages updated in the last six months ✅ */
 /* fetch to get html as response */
@@ -7,15 +7,125 @@ var fetch = require('node-fetch');
 var cheerio = require('cheerio');
 /* moment will get the scrape time */
 var moment = require('moment');
-/* scraper consumes user defined functions */
-var writer = require('./writer');
-var logger = require('./logger');
+/* timezone is required for the abbreviation eg. PST inside timestamp */
+var zone = require('moment-timezone');
+/* fs library for read/write to files */
+const fs = require('fs');
+/* promisify library for returning promises */
+const { promisify } = require('util');
+/* lstat library for checking if file exists */
+const lstat = promisify(fs.lstat);
+/* mkdir library for checking if directory exists */
+const mkdir = promisify(fs.mkdir);
+/* path library for getting working directory */
+const path = require('path');
+/* library for writing objects to csv */
+const createCsvWriter = require('csv-writer').createObjectCsvWriter;
+
 /* url and file path constants */
 const path_url = 'http://shirts4mike.com/shirts.php';
-const base_url = 'http://shirts4mike.com/';
+const base_url = 'http://shirtsmike.com/';
 /* arrays for storing scraped data */
 let scrape_urls = [];
 let final_set = [];
+/* checkLock is a helper function for blocking the program from proceeding when it is waiting for operations
+ like file write */
+/* global variable for blocking thread */
+let lock;
+/* locking function for blocking thread */
+function checkLock(){
+  return new Promise(resolve => {
+
+    const tick = () => {
+      setTimeout(() => {
+        if(lock) {
+          return tick();
+        }
+
+        resolve();
+      }, 100);
+    }
+
+    tick();
+
+  });
+}
+/* checkDirectoryExists check for a folder called ‘data’.  */
+async function checkDirectoryExists(dataPath) {
+  if(lock)
+    await checkLock();
+
+  lock = true;
+
+  try {
+    /* directory does exist */
+    await lstat(dataPath);
+    /* If the folder does exist, the scraper should do nothing. */
+    lock = false;
+  } catch(e) {
+    /* directory does not exist */
+    await mkdir(dataPath);
+    /* If the folder does not exist, create one. */
+    lock = false;
+  }
+}
+/* writeFile writes the results object to csv */
+async function writeFile(filePath, final_set){
+  if(lock)
+    await checkLock();
+
+  lock = true;
+
+  const csvWriter = createCsvWriter({
+    path: filePath,
+    header: [
+      {id: 'title', title: 'TITLE'},
+      {id: 'price', title: 'PRICE'},
+      {id: 'imageURL', title: 'IMAGEURL'},
+      {id: 'URL', title: 'URL'},
+      {id: 'time', title: 'TIME'},
+    ]
+  });
+
+  try {
+    /* final_set contains data to write */
+    csvWriter.writeRecords(final_set) // returns a promise
+      .then(() => {
+        console.log('...Done');
+      });
+    lock = false;
+  } catch(e){
+    lock = false;
+    console.log('Unable to write ', e);
+  }
+}
+/* writer fn calls the dir and fs operations in order and catches errors */
+async function writer(final_set){
+  /* this is the dir path for file */
+  const dataPath = path.join(__dirname, 'data');
+  /* this is the path including date as filename */
+  const filePath = path.join(dataPath, new moment().format('YYYY-MM-DD') + '.csv');
+  try {
+    await checkDirectoryExists(dataPath);
+    await writeFile(filePath, final_set);
+  } catch(e){
+    console.log('There was an error in the write fn ', e);
+  }
+}
+
+/* if an error is thrown in the code write the error message with timestamp to a file */
+function write_log(error){
+  /* write the line to file as a stream with the flag for appending */
+  let stream = fs.createWriteStream("scraper-error.log", {flags:'a'});
+  /* compose the timestamp as stated in the project spec */
+  /* [Tue Feb 16 2016 10:02:12 GMT-0800 (PST)] */
+  let stamp = '['+ moment().toString() + ' ' + zone.tz(zone.tz.guess()).zoneAbbr() + ']';
+  /* write */
+  stream.write(stamp + ' ' + error + "\n");
+  /* close the stream connection */
+  stream.end();
+}
+
 /* reusable fn to handle fetch errors such as 404 */
 function handleErrors(response) {
     if (!response.ok) {
@@ -86,13 +196,13 @@ async function main(){
     await fetch_urls();
     await fetch_data();
     /* write data object to file as csv */
-    /* see writer.js */
-    writer.write(final_set)
+    /* see writer fn */
+    writer(final_set)
   } catch(error){
     /* any error in the nested code will bubble up to here */
     /* exceeds expectations: write error to log file */
-    /* see logger.js */
-    logger.write(error)
+    /* see write_log fn */
+    write_log(error)
   }
 }
 
