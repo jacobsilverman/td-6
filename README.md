@@ -1,7 +1,4 @@
-# techdegree-project-6
-Team Treehouse Techdegree Project 6: Exceeds Expectations
+# Team Treehouse Techdegree Project 6
+This is a node.js project so there is no live demo available.
 
-I went for the exceeds grade.
-You can run the project with npm start
-
-thank you for your review!
+To run the project, clone from github and run with npm start.
